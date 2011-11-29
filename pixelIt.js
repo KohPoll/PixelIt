@@ -62,6 +62,7 @@
                     }
                 };
             
+            // core
             image = {
                 width: width,
                 height: height,
@@ -91,7 +92,7 @@
 
             // core util
             image.util = {
-                rgbToGray: function(r, g, b) {
+                rgb2gray: function(r, g, b) {
                     var gray = Math.floor(0.3 * r + 0.59 * g + 0.11 * b);
                     return gray;
                 }

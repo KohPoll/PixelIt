@@ -8,20 +8,23 @@
 <body>
     <div id="container"></div>
 
+    <p><button id="act">Process</button>
 <script>
 window.addEventListener('DOMContentLoaded', function(evt) {
-    pixelIt('container').width(400).height(400).load('image.jpg').process(function(image) {
+    var pIt = pixelIt('container').width(400).height(400).load('image.jpg');
 
-        image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
-            return [255 - r, 255 - g, 255 - b, a];
-        });
+    var button = document.getElementById('act');
+    button.addEventListener('click', function(evt) {
+        pIt.process(function(image) {
+            image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
+                var gray = image.util.rgb2gray(r, g, b);
+                return [gray, gray, gray, a - 100];
+            });
 
-        image.patch(50, 50, image.width, image.height, function(r, g, b, a) {
-            return [r, g, b, 100];
+            image.draw();
         });
-        
-        image.draw();
     });
+
 }, false);
 </script>
 </body>
