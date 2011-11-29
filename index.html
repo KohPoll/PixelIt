@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dice Image</title>
+    <style>canvas { border: 1px solid #333; }</style>
+    <script src="pixelIt.js"></script>
+</head>
+<body>
+    <div id="container"></div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function(evt) {
+    pixelIt('container').width(400).height(400).load('image.jpg').process(function(image) {
+
+        image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
+            return [255 - r, 255 - g, 255 - b, a];
+        });
+
+        image.patch(50, 50, image.width, image.height, function(r, g, b, a) {
+            return [r, g, b, 100];
+        });
+        
+        image.draw();
+    });
+}, false);
+</script>
+</body>
+</html>
