@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dice Image</title>
-    <style>canvas { border: 1px solid #333; }</style>
+    <title>pixelIt Demo</title>
+    <style>div { float: left; margin: 10px; border: 1px solid #333; }</style>
     <script src="pixelIt.js"></script>
 </head>
 <body>
-    <div id="container"></div>
+    <div id="container1"></div>
+    <div id="container2"></div>
 
-    <p><button id="act">Process</button>
+    <p style="clear:both;"><button id="act">Process</button>
 <script>
 window.addEventListener('DOMContentLoaded', function(evt) {
-    var pIt = pixelIt('container').width(400).height(400).load('image.jpg');
+    var img1 = pixelIt('container1').load('image.jpg');
+    var img2 = pixelIt('container2').load('image.jpg');
 
     var button = document.getElementById('act');
     button.addEventListener('click', function(evt) {
-        pIt.process(function(image) {
+        img1.process(function(image) {
             image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
                 var gray = image.util.rgb2gray(r, g, b);
                 return [gray, gray, gray, a - 100];
@@ -23,6 +25,15 @@ window.addEventListener('DOMContentLoaded', function(evt) {
 
             image.draw();
         });
+
+        img2.process(function(image) {
+            image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
+                return [b, g, r, a];
+            });
+
+            image.draw();
+        });
+
     });
 
 }, false);

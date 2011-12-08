@@ -6,8 +6,6 @@ PixelIt
 html结构中有一个“装”canvas的容器，如：<div id="container"></div>
 
 pixelIt('container')
-    .height(400)
-    .width(400)
     .load('image.jpg')
     .process(function(image) {
         image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
@@ -18,3 +16,7 @@ pixelIt('container')
 
 注意：
 仅在支持canvas的浏览器内使用:)
+
+change:
+    1. 移除了height,width方法，根据图片大小自动调整容器及canvas的大小，并居中显示图片
+    2. 改单例模式为每次都构造一个新的对象，可以同时处理多张图片 
