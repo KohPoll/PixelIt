@@ -5,7 +5,7 @@
     var pixelIt = function(elem) {
         var container, canvas, ctx,
             imageToLoad, isImageLoaded = false, checkTimer,
-            x, y, image;
+            x, y, $image;
 
         var init = function(elem) {
                 if (elem && typeof elem === 'string') {
@@ -45,7 +45,7 @@
                     };
                 
                 // core
-                image = {
+                $image = {
                     width: width,
                     height: height,
                     pixelArray: pixelArray,
@@ -61,11 +61,19 @@
                         }
                     },
                     patch: function(left, top, right, bottom, fn) {
+                        var rstRGBAs = [];
+
                         for (var x=left; x<right; ++x) {
                             for (var y=top; y<bottom; ++y) {
-                                this.pixel(x, y, fn);
+                                if (typeof fn === 'function') {
+                                    this.pixel(x, y, fn);
+                                } else {
+                                    rstRGBAs.push(this.pixel(x, y));
+                                }
                             }
                         }
+
+                        return rstRGBAs;
                     },
                     draw: function() {
                         ctx.putImageData(imageData, x, y);
@@ -73,7 +81,7 @@
                 };
 
                 // core util
-                image.util = {
+                $image.util = {
                     rgb2gray: function(r, g, b) {
                         var gray = Math.floor(0.3 * r + 0.59 * g + 0.11 * b);
                         return gray;
@@ -108,7 +116,9 @@
                     drawToCenter(this);
 
                     initImage(this);
+
                     isImageLoaded = true;
+                    imageToLoad.onload = null;
                 };
                 imageToLoad.src = src;
 
@@ -117,7 +127,7 @@
             process = function(fn) {
                 checkTimer = setInterval(function() {
                     if (isImageLoaded) {
-                        fn(image);
+                        fn($image);
                         clearInterval(checkTimer);
                     }
                 }, 100);
@@ -153,7 +163,6 @@
         };
 
     };
-
 
     if (typeof window.pixelIt === 'undefined') {
         window.pixelIt = pixelIt;

@@ -17,18 +17,25 @@ window.addEventListener('DOMContentLoaded', function(evt) {
 
     var button = document.getElementById('act');
     button.addEventListener('click', function(evt) {
-        img1.process(function(image) {
-            image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
-                var gray = image.util.rgb2gray(r, g, b);
-                return [gray, gray, gray, a - 100];
-            });
+        var patchImg1;
 
-            image.draw();
+        img1.process(function(image) {
+            patchImg1 = image.patch(Math.ceil(image.width / 2), Math.ceil(image.height / 2), image.width, image.height);
         });
 
         img2.process(function(image) {
-            image.patch(0, 0, image.width, image.height, function(r, g, b, a) {
-                return [b, g, r, a];
+            var i = -1;
+            image.patch(0, 0, Math.ceil(image.width / 2), Math.ceil(image.height / 2), function(r, g, b, a) {
+                i = i + 1;
+                var sr, sg, sb, sa;
+                if (patchImg1[i]) {
+                    sr = patchImg1[i][0];
+                    sg = patchImg1[i][1];
+                    sb = patchImg1[i][2];
+                    sa = patchImg1[i][3];
+                }
+                var gray = image.util.rgb2gray(sr, sg, sb);
+                return [gray, gray, gray, a];
             });
 
             image.draw();
