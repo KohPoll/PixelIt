@@ -2,45 +2,123 @@
 <html>
 <head>
     <title>pixelIt Demo</title>
-    <style>div { float: left; margin: 10px; border: 1px solid #333; }</style>
+
+    <style>
+     ul,li {margin:0;padding:0;list-style:none;}
+
+    .list {
+        overflow: hidden;
+    }
+    .list li {
+        float: left;
+        margin: 10px;
+    }
+
+    canvas {
+        border: 1px solid #eee;
+    }
+    </style>
+
     <script src="pixelIt.js"></script>
 </head>
 <body>
-    <div id="container1"></div>
-    <div id="container2"></div>
+    <ul class="list">
+        <li>
+            <p>before:</p>
+            <div id="img1"></div>
+        </li>
 
-    <p style="clear:both;"><button id="act">Process</button>
+        <li>
+            <p>after:</p>
+            <div id="img2"></div>
+        </li>
+    </ul>
+
+    <div id="act">
+        <button>sepia</button>
+
+        <button>gray</button>
+        <button>red</button>
+        <button>blue</button>
+        <button>green</button>
+
+        <button>brighter</button>
+        <button>darker</button>
+
+        <button>reset</button>
+    </div>
+
 <script>
 window.addEventListener('DOMContentLoaded', function(evt) {
-    var img1 = pixelIt('container1').load('image.jpg');
-    var img2 = pixelIt('container2').load('image.jpg');
+    var img1 = pixelIt('img1').load('sandbox.jpg');
+    var img2 = pixelIt('img2').load('sandbox.jpg');
 
-    var button = document.getElementById('act');
-    button.addEventListener('click', function(evt) {
-        var patchImg1;
+    pixelIt.addUtil('color', function (main, rgba) {
+        var c = (rgba[0] + rgba[1] + rgba[2]) / 3;
+        var colors = [0, 0, 0, rgba[3]];
+        colors[main] = c;
+        return colors;
+    });
+    pixelIt.addUtil('delta', function (v, rgba) {
+        return [rgba[0] + v, rgba[1] + v, rgba[2] + v, rgba[3]];
+    });
 
-        img1.process(function(image) {
-            patchImg1 = image.patch(Math.ceil(image.width / 2), Math.ceil(image.height / 2), image.width, image.height);
-        });
+    var filter = {
+        'sepia': function (image) {
+            image.all(function (r, g, b, a) {
+                var rr = (r * 0.393) + (g * 0.769) + (b * 0.189);
+                var rg = (r * 0.349) + (g * 0.686) + (b * 0.168);
+                var rb = (r * 0.272) + (g * 0.534) + (b * 0.131);
+                return [rr, rg, rb, a];
+            });
+        },
 
-        img2.process(function(image) {
-            var i = -1;
-            image.patch(0, 0, Math.ceil(image.width / 2), Math.ceil(image.height / 2), function(r, g, b, a) {
-                i = i + 1;
-                var sr, sg, sb, sa;
-                if (patchImg1[i]) {
-                    sr = patchImg1[i][0];
-                    sg = patchImg1[i][1];
-                    sb = patchImg1[i][2];
-                    sa = patchImg1[i][3];
-                }
-                var gray = image.util.rgb2gray(sr, sg, sb);
+        'gray': function (image) {
+            image.all(function (r, g, b, a) {
+                var gray = image.util.rgb2gray(r, g, b);
                 return [gray, gray, gray, a];
             });
+        },
+        'red': function (image) {
+            image.all(function (r, g, b, a) {
+                return image.util.color(0, [r, g, b, a]);
+            });
+        },
+        'blue': function (image) {
+            image.all(function (r, g, b, a) {
+                return image.util.color(1, [r, g, b, a]);
+            });
+        },
+        'green': function (image) {
+            image.all(function (r, g, b, a) {
+                return image.util.color(2, [r, g, b, a]);
+            });
+        },
 
-            image.draw();
-        });
+        'brighter': function (image) {
+            image.all(function (r, g, b, a) {
+                return image.util.delta(30, [r, g, b, a]);
+            });
+        },
+        'darker': function (image) {
+            image.all(function (r, g, b, a) {
+                return image.util.delta(-30, [r, g, b, a]);
+            });
+        }
+    };
 
+    var act = document.getElementById('act');
+    act.addEventListener('click', function(evt) {
+        if (evt.target.tagName.toUpperCase() == 'BUTTON') {
+            if (evt.target.innerHTML == 'reset') {
+                img2.reset();
+            } else {
+                img2.process(function (image) {
+                    filter[evt.target.innerHTML](image);
+                    image.draw();
+                });
+            }
+        }
     });
 
 }, false);
