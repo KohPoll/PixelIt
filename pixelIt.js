@@ -1,5 +1,26 @@
-
+/*!
+ * pixelIt.js
+ * kohpoll(kongxp920@gmail.com)
+ * Released under the MIT License.
+ */
 (function(window, undefined) {
+
+    var noop = function(){};
+
+    var get = function (id) {
+        if (typeof id == 'string') {
+            return document.getElementById(id);
+        }
+        return id;
+    };
+    var attr = function (elem, name, value) {
+        if (value == null) {
+            return elem.getAttribute(name);
+        } else {
+            elem.setAttribute(name, value);
+        }
+    };
+
 
     var $imageUtil = {
         rgb2gray: function(r, g, b) {
@@ -7,187 +28,165 @@
         }
     };
 
-    var pixelIt = function(elem) {
-        var container, canvas, ctx;
-        var imageToLoad, isImageLoaded = false, checkTimer;
-        var $image;
 
-        var init = function(elem) {
-            if (elem && typeof elem === 'string') {
-                container = document.getElementById(elem);
+    function $Image(image) {
+        this.initialize(image);
+    }
+    $Image.prototype = {
+        constructor: $Image,
+        initialize: function (image) {
+            var self = this;
 
-                canvas = document.createElement('canvas');
-                container && container.appendChild(canvas);
+            // set the img & width & height
+            self.set('image', image);
+            self.set('width', image.width);
+            self.set('height', image.height);
 
-                canvas.getContext && (ctx = canvas.getContext('2d'));
+            // draw it to canvas
+            self._drawToCanvas(image);
+        },
+
+        pixel: function(x, y, fn) {
+            var self = this;
+            var oriRGBA, rstRGBA;
+
+            oriRGBA = self._rgba(x, y);
+            if (fn == null) {
+                return oriRGBA;
             }
-        };
 
-        var initImage = function(img) {
-            var width = img.width, height = img.height;
-            var imageData = ctx.getImageData(0, 0, width, height);
-            var pixelArray = imageData.data;
+            rstRGBA = fn(oriRGBA[0], oriRGBA[1], oriRGBA[2], oriRGBA[3]);
+            self._rgba(x, y, rstRGBA);
 
-            var dimensionMapper = function(x, y) {
-                return x * (width * 4) + (y * 4);
-            };
-            var getPixelRGBA = function(x, y) {
-                var s = dimensionMapper(x, y);
+            self._refresh();
+        },
+        patch: function(left, top, right, bottom, fn) {
+            var self = this;
+            var oriRGBA, rstRGBAs = [];
 
-                return [pixelArray[s],
-                        pixelArray[s + 1],
-                        pixelArray[s + 2],
-                        pixelArray[s + 3]];
-            };
-            var setPixelRGBA = function(x, y, rgba) {
-                var s = dimensionMapper(x, y);
+            for (var x=left; x<right; ++x) {
+                for (var y=top; y<bottom; ++y) {
+                    oriRGBA = self._rgba(x, y);
 
-                if (rgba && typeof rgba === 'object' && rgba.length === 4) {
-                    pixelArray[s    ] = rgba[0];
-                    pixelArray[s + 1] = rgba[1];
-                    pixelArray[s + 2] = rgba[2];
-                    pixelArray[s + 3] = rgba[3]
-                }
-            };
-
-            // core
-            $image = {
-                width: width,
-                height: height,
-                pixelArray: pixelArray,
-                pixel: function(x, y, fn) {
-                    var oriRGBA, rstRGBA;
-
-                    if (x < 0 || x > width) {
-                        throw "x is out of bounds";
-                    }
-                    if (y < 0 || y > height) {
-                        throw "y is out of bounds";
-                    }
-
-                    oriRGBA = getPixelRGBA(x, y);
-                    if (typeof fn === 'function') {
-                        rstRGBA = fn(oriRGBA[0], oriRGBA[1], oriRGBA[2], oriRGBA[3]);
-                        setPixelRGBA(x, y, rstRGBA);
+                    if (fn == null) {
+                        rstRGBAs.push(oriRGBA);
                     } else {
-                        return oriRGBA;
+                        self._rgba(x, y, fn(oriRGBA[0], oriRGBA[1], oriRGBA[2], oriRGBA[3]));
                     }
-                },
-                patch: function(left, top, right, bottom, fn) {
-                    var rstRGBAs = [];
-
-                    for (var x=left; x<right; ++x) {
-                        for (var y=top; y<bottom; ++y) {
-                            if (typeof fn === 'function') {
-                                this.pixel(x, y, fn);
-                            } else {
-                                rstRGBAs.push(this.pixel(x, y));
-                            }
-                        }
-                    }
-
-                    return rstRGBAs;
-                },
-                all: function (fn) {
-                    return this.patch(0, 0, width, height, fn);
-                },
-                draw: function() {
-                    ctx.putImageData(imageData, 0, 0);
                 }
-            };
+            }
 
-            // core util
-            $image.util = $imageUtil;
-        };
+            if (fn != null) { //refresh it
+                self._refresh();
+            }
 
-        var drawToCanvas = function (img) {
-            if (ctx == null) return;
+            return rstRGBAs;
+        },
+        all: function (fn) {
+            var self = this;
+            var width = self.get('width'), height = self.get('height');
 
-            canvas.width = img.width;
-            canvas.height = img.height;
+            return self.patch(0, 0, width, height, fn);
+        },
+        reset: function () {
+            var self = this;
+            var image = self.get('image');
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            self._drawToCanvas(image);
+        },
+
+        _rgba: function (x, y, rgba) {
+            var self = this;
+            var width = self.get('width');
+            var pixelArr = self.get('imageData').data;
+            var s = xyToindex(x, y);
+
+            if (rgba == null) {
+                //get
+                return [
+                    pixelArr[s],
+                    pixelArr[s + 1],
+                    pixelArr[s + 2],
+                    pixelArr[s + 3]
+                ];
+            }
+
+            //set
+            pixelArr[s]     = rgba[0];
+            pixelArr[s + 1] = rgba[1];
+            pixelArr[s + 2] = rgba[2];
+            pixelArr[s + 3] = rgba[3];
+
+            function xyToindex (x, y) {
+                return x * (width * 4) + (y * 4);
+            }
+        },
+        _refresh: function () {
+            var self = this;
+            var ctx = self.get('ctx');
+            var imageData = self.get('imageData');
+
+            ctx.putImageData(imageData, 0, 0);
+        },
+
+        _drawToCanvas: function (image) {
+            var self = this;
+            var width = self.get('width'), height = self.get('height');
+            var ctx = self.get('ctx') || self._getContext(image);
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(image, 0, 0, width, height);
+
+            self.set('ctx', ctx);
+            self.set('imageData', ctx.getImageData(0, 0, width, height));
 
             return this;
-        };
+        },
+        _getContext: function (image) {
+            var canvas = document.createElement('canvas');
 
-        var reset = function () {
-            if (imageToLoad == null) return;
+            canvas.width = image.width;
+            canvas.height = image.height;
 
-            drawToCanvas(imageToLoad);
-            initImage(imageToLoad);
+            image.parentNode.appendChild(canvas);
+            image.remove();
 
-            return this;
-        };
+            return canvas.getContext('2d');
+        },
 
-        var load = function (src) {
-            if (ctx == null) return;
+        _attrs: {},
+        get: function (k) {
+            return this._attrs[k];
+        },
+        set: function (k, v) {
+            this._attrs[k] = v;
+        },
 
-            imageToLoad = new Image();
-            imageToLoad.onload = function(evt) {
-                drawToCanvas(this);
-                initImage(this);
-
-                isImageLoaded = true;
-                imageToLoad.onload = null;
-            };
-            imageToLoad.src = src;
-
-            return this;
-        };
-
-        var process = function(fn) {
-            checkTimer = setInterval(function() {
-                if (isImageLoaded) {
-                    fn($image);
-                    clearInterval(checkTimer);
-                }
-            }, 100);
-
-            return this;
-        };
-
-        init(elem); //init
-
-        // public interface
-        return {
-            reset: reset,
-            /*
-             * src {String} : url of image to load.
-             */
-            load: load,
-            /* 
-             * fn {Function} - the process function, accept the image argument. fn(image)
-             *      --image {Object}
-             *          {
-             *              width {Number} : the width of loaded image,
-             *              height {Number} : the height of loaded image,
-             *              pixelArray {CanvasPixelArray} : pixel array(not advised),
-             *              pixel {Function} : function(x, y, fn),
-             *              patch {Function} : function(left, top, right, bottom, fn),
-             *              draw {Function} : draw the image after processed
-             *          }
-             *      Note:
-             *      fn - fn(r, g, b, a) { return [rv, gv, bv, av]; }
-             *      r, g, b, a is the component of the according pixel, return a
-             *      array of 4 item(the component after processing)
-             */
-            process: process
-        };
-
+        //util
+        util: $imageUtil
     };
 
-    /*
-     * extend the util
-     * k {String} : name of the util function.
-     * f {Function} : the util function.
-     */
+
+    var pixelIt = function (el, fn) {
+        var self = this;
+
+        el = get(el);
+        fn = fn || noop;
+
+        el.onload = function (evt) {
+            fn.call(self, new $Image(this));
+            el.onload = null;
+            el = null;
+        };
+    };
+
+
     pixelIt.addUtil = function (k, f) {
         if ($imageUtil[k] == null) {
             $imageUtil[k] = f;
         }
     };
+
 
     if (typeof window.pixelIt === 'undefined') {
         window.pixelIt = pixelIt;

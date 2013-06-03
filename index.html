@@ -22,15 +22,15 @@
     <script src="pixelIt.js"></script>
 </head>
 <body>
-    <ul class="list">
+    <ul class="list" id="list">
         <li>
             <p>before:</p>
-            <div id="img1"></div>
+            <img src="sandbox.jpg">
         </li>
 
         <li>
             <p>after:</p>
-            <div id="img2"></div>
+            <img src="sandbox.jpg" id="J_img">
         </li>
     </ul>
 
@@ -38,6 +38,7 @@
         <button>sepia</button>
 
         <button>gray</button>
+
         <button>red</button>
         <button>blue</button>
         <button>green</button>
@@ -45,25 +46,15 @@
         <button>brighter</button>
         <button>darker</button>
 
+        <button>threshold</button>
+
         <button>reset</button>
     </div>
 
 <script>
 window.addEventListener('DOMContentLoaded', function(evt) {
-    var img1 = pixelIt('img1').load('sandbox.jpg');
-    var img2 = pixelIt('img2').load('sandbox.jpg');
 
-    pixelIt.addUtil('color', function (main, rgba) {
-        var c = (rgba[0] + rgba[1] + rgba[2]) / 3;
-        var colors = [0, 0, 0, rgba[3]];
-        colors[main] = c;
-        return colors;
-    });
-    pixelIt.addUtil('delta', function (v, rgba) {
-        return [rgba[0] + v, rgba[1] + v, rgba[2] + v, rgba[3]];
-    });
-
-    var filter = {
+    var filters = {
         'sepia': function (image) {
             image.all(function (r, g, b, a) {
                 var rr = (r * 0.393) + (g * 0.769) + (b * 0.189);
@@ -79,46 +70,62 @@ window.addEventListener('DOMContentLoaded', function(evt) {
                 return [gray, gray, gray, a];
             });
         },
+
         'red': function (image) {
             image.all(function (r, g, b, a) {
-                return image.util.color(0, [r, g, b, a]);
-            });
-        },
-        'blue': function (image) {
-            image.all(function (r, g, b, a) {
-                return image.util.color(1, [r, g, b, a]);
+                var c = (r + g + b) / 3;
+                return [c, 0, 0, a];
             });
         },
         'green': function (image) {
             image.all(function (r, g, b, a) {
-                return image.util.color(2, [r, g, b, a]);
+                var c = (r + g + b) / 3;
+                return [0, c, 0, a];
+            });
+        },
+        'blue': function (image) {
+            image.all(function (r, g, b, a) {
+                var c = (r + g + b) / 3;
+                return [0, 0, c, a];
             });
         },
 
         'brighter': function (image) {
             image.all(function (r, g, b, a) {
-                return image.util.delta(30, [r, g, b, a]);
+                var delta = 30;
+                return [r + delta, g + delta, b+ delta, a];
             });
         },
         'darker': function (image) {
             image.all(function (r, g, b, a) {
-                return image.util.delta(-30, [r, g, b, a]);
+                var delta = -30;
+                return [r + delta, g + delta, b + delta, a];
             });
+        },
+
+        'threshold': function (image) {
+            image.all(function (r, g, b, a) {
+                var threshold = 100;
+                var v = (0.2126 * r + 0.7152 * g + 0.0722 * b >= threshold) ? 255 : 0;
+                return [v, v, v, a];
+            });
+        },
+
+        'reset': function (image) {
+            image.reset();
         }
     };
 
     var act = document.getElementById('act');
-    act.addEventListener('click', function(evt) {
-        if (evt.target.tagName.toUpperCase() == 'BUTTON') {
-            if (evt.target.innerHTML == 'reset') {
-                img2.reset();
-            } else {
-                img2.process(function (image) {
-                    filter[evt.target.innerHTML](image);
-                    image.draw();
-                });
+
+    pixelIt('J_img', function (image) {
+
+        act.addEventListener('click', function(evt) {
+            if (evt.target.tagName.toUpperCase() == 'BUTTON') {
+                filters[evt.target.innerHTML](image);
             }
-        }
+        });
+
     });
 
 }, false);
