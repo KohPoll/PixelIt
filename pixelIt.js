@@ -7,20 +7,6 @@
 
     var noop = function(){};
 
-    var get = function (id) {
-        if (typeof id == 'string') {
-            return document.getElementById(id);
-        }
-        return id;
-    };
-    var attr = function (elem, name, value) {
-        if (value == null) {
-            return elem.getAttribute(name);
-        } else {
-            elem.setAttribute(name, value);
-        }
-    };
-
 
     var $imageUtil = {
         rgb2gray: function(r, g, b) {
@@ -59,6 +45,8 @@
             self._rgba(x, y, rstRGBA);
 
             self._refresh();
+
+            return self;
         },
         patch: function(left, top, right, bottom, fn) {
             var self = this;
@@ -78,6 +66,7 @@
 
             if (fn != null) { //refresh it
                 self._refresh();
+                return self;
             }
 
             return rstRGBAs;
@@ -93,13 +82,17 @@
             var image = self.get('image');
 
             self._drawToCanvas(image);
+
+            return self;
         },
 
         _rgba: function (x, y, rgba) {
             var self = this;
             var width = self.get('width');
             var pixelArr = self.get('imageData').data;
-            var s = xyToindex(x, y);
+
+            var xy2index = function (x, y) { return x * (width * 4) + (y * 4); };
+            var s = xy2index(x, y);
 
             if (rgba == null) {
                 //get
@@ -117,9 +110,7 @@
             pixelArr[s + 2] = rgba[2];
             pixelArr[s + 3] = rgba[3];
 
-            function xyToindex (x, y) {
-                return x * (width * 4) + (y * 4);
-            }
+            return self;
         },
         _refresh: function () {
             var self = this;
@@ -127,6 +118,8 @@
             var imageData = self.get('imageData');
 
             ctx.putImageData(imageData, 0, 0);
+
+            return self;
         },
 
         _drawToCanvas: function (image) {
@@ -140,7 +133,7 @@
             self.set('ctx', ctx);
             self.set('imageData', ctx.getImageData(0, 0, width, height));
 
-            return this;
+            return self;
         },
         _getContext: function (image) {
             var canvas = document.createElement('canvas');
@@ -169,14 +162,16 @@
 
     var pixelIt = function (el, fn) {
         var self = this;
+        var image = el;
 
-        el = get(el);
+        if (image == null) return;
+
         fn = fn || noop;
 
-        el.onload = function (evt) {
+        image.onload = function (evt) {
             fn.call(self, new $Image(this));
-            el.onload = null;
-            el = null;
+            image.onload = null;
+            image = null;
         };
     };
 

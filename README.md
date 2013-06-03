@@ -25,7 +25,7 @@ It is can be used in browser with HTML5 Canvas supported. :)
       return [rgba[0] + v, rgba[1] + v, rgba[2] + v, rgba[3]];
     });
 
-    // initialize (el is the image element or the id of the image element).
+    // initialize (el is the image element).
     pixelIt(el, function (image) {
         // here, the image is the enhanced image.
         console.log(image);
@@ -36,7 +36,8 @@ It is can be used in browser with HTML5 Canvas supported. :)
           //  - image.all(fn)
           //  - image.reset()
           //  - the callback fn accept the (r,g,b,a) of the image, eg: fn(r, g, b, a);
-                you need return the result (r,g,b,a) after processing, eg: return [rr, rg, rb, ra].
+          //    you need return the result (r,g,b,a) after processing, eg: return [rr, rg, rb, ra].
+          //  - all methods will return `this`, so you can chain it.
 
         // props:
           //  - image.get('width')

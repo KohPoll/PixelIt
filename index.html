@@ -47,6 +47,7 @@
         <button>darker</button>
 
         <button>threshold</button>
+        <button>special</button>
 
         <button>reset</button>
     </div>
@@ -113,19 +114,28 @@ window.addEventListener('DOMContentLoaded', function(evt) {
 
         'reset': function (image) {
             image.reset();
+        },
+
+        'special': function (image) {
+            var w2 = image.get('width'), h2 = image.get('height');
+            var w1 = Math.ceil(w2 / 2), h1 = Math.ceil(h2 / 2);
+
+            image.patch(0,0,w2,h1,function(r,g,b,a){
+                return [r,0,0,a];
+            }).patch(0,h1,w2,h2,function(r,g,b,a){
+                return [0,g,0,a];
+            });
         }
     };
 
     var act = document.getElementById('act');
 
-    pixelIt('J_img', function (image) {
-
+    pixelIt(document.getElementById('J_img'), function (image) {
         act.addEventListener('click', function(evt) {
             if (evt.target.tagName.toUpperCase() == 'BUTTON') {
                 filters[evt.target.innerHTML](image);
             }
         });
-
     });
 
 }, false);
